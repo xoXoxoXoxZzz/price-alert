@@ -2,6 +2,9 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 import logging , requests , time , threading , os
 
+#global variabels
+dollar = None
+usd_rate_float = None
 
 #log
 logging.basicConfig(
@@ -24,16 +27,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 #for btc command price check 
 async def btc(update , context ):
+    
      btc_price_now = get_bitcoin_price()
      await update.message.reply_text(f"BTC price is {btc_price_now} USD")
 
 #usd to irr price check by bacheha
 async def get_dollar_price(update: Update , context):
-    r = requests.post('https://www.bonbast.com/converter')  
-    if r.status_code == 200 :
-        resp = r.json()
-        dollar = int(float(resp["IRR"]) * 1.303189846)
-        await update.message.reply_text(f"Dollar price is {dollar} IRR")
+    global dollar
+    if dollar == None :
+        r = requests.post('https://www.bonbast.com/converter')  
+        if r.status_code == 200 :
+            resp = r.json()
+            dollar = int(float(resp["IRR"]) * 1.303189846)
+            await update.message.reply_text(f"Dollar price is {dollar} IRR")
+    else:
+            await update.message.reply_text(f"Dollar price is {dollar} IRR")
 
 # Function to handle the target price and filter input
 async def settarget(update , context):
@@ -53,15 +61,30 @@ async def settarget(update , context):
         await update.message.reply_text("Invalid input. Please provide the target price (in USD) and optionally a filter (e.g., /settarget > 50000 or /settarget < 45000).")
 
 #HELPER FUNCTIONS
+#reset global vars every 60 seconds for sake of caching
+async def global_reset():
+    global dollar
+    global usd_rate_float
+    while True:
+        dollar = None
+        usd_rate_float = None
+        time.sleep(60)
+
 #BTC price check api 
 def get_bitcoin_price():
-    url = 'https://api.coindesk.com/v1/bpi/currentprice.json'
-    response = requests.get(url)
-    data = response.json()
+    global usd_rate_float
+
+    if usd_rate_float == None:
+        url = 'https://api.coindesk.com/v1/bpi/currentprice.json'
+        response = requests.get(url)
+        data = response.json()
+        usd_rate_float = data['bpi']['USD']['rate_float']
+        return usd_rate_float
+        
+    else :
+        return usd_rate_float
     
-    usd_rate_float = data['bpi']['USD']['rate_float']
     
-    return usd_rate_float
 
 #check bitcoin price every 60 secs thread module
 def check_btc_price(target_price, target_symbol , chat_id):
@@ -96,3 +119,4 @@ application.add_handler(btc_handler)
 
 #keep it running
 application.run_polling()
+global_reset()
