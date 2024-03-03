@@ -17,10 +17,9 @@ application = ApplicationBuilder().token(TOKEN).build()
 # TELEGRAM HANDLER FUNCTIONS
 #when user sends /strat
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    btcpricenow = get_bitcoin_price()
     await context.bot.send_message(
         chat_id=update.effective_chat.id, 
-        text=f"Hi! Send me \n /usd for current USD/IRR \n /btc for current BTC/USD \n /settarget e.g /settarget > 60000 \n or /settarget < 30000 for btc price notification  "
+        text=f"Hi! Send me \n /usd for current USD/IRR \n /btc for current BTC/USD \n or you can set a target for btc \n e.g /settarget > 60000 or /settarget < 30000 \n for btc price notification  "
     )
 
 #for btc command price check 
@@ -37,7 +36,7 @@ async def get_dollar_price(update: Update , context):
         await update.message.reply_text(f"Dollar price is {dollar} IRR")
 
 # Function to handle the target price and filter input
-async def settarget(update):
+async def settarget(update , context):
 
     try:
         target_and_filter = update.message.text.split()
