@@ -12,7 +12,7 @@ git pull || {
 if docker ps -a --format '{{.Names}}' | grep -q "^price-alert"; then
     echo "Found the old Container...Removing!"
     docker stop price-alert
-    docker rm priceee-alert
+    docker rm price-alert
 fi
 
 # build docker image 
